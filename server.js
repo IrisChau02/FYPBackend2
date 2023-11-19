@@ -21,6 +21,8 @@ app.get('/', (req, res)=> {
   app.post('/login', (req, res)=> {
     const sql = "SELECT * FROM `register` WHERE `loginName` = ? AND `password` = ?"
 
+    //// Generate a unique identifier for the image
+  //const uniqueIdentifier = generateUniqueIdentifier();
     db.query(sql, [req.body.username, req.body.password], (err, data)=>{
         if(err) {
           return res.json(err);
@@ -93,7 +95,7 @@ app.get('/', (req, res)=> {
 ///////////////////////////Guild/////////////////////////////
 app.post('/createGuild', (req, res)=> {
 
-  const sql = "INSERT INTO `guild`(`guildName`, `guildInto`, `level`, `memberNo`, `guildLogo`, `districtID`) VALUES (?)"
+  const sql = "INSERT INTO `guild`(`guildName`, `guildIntro`, `level`, `memberNo`, `guildLogo`, `districtID`) VALUES (?)"
 
   const values = [req.body.guildName, req.body.guildIntro, req.body.level, req.body.member, req.body.guildLogo, req.body.districtDropdown.districtID ]
 
@@ -114,6 +116,23 @@ app.get('/getGuild', (req, res)=> {
   })
 });
 
+
+///////////////////////////Guild Event/////////////////////////////
+app.post('/createGuildEvent', (req, res)=> {
+
+  
+  const sql = "INSERT INTO `guildevent`(`eventName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `venue`) VALUES (?)"
+
+  const values = [req.body.eventName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.venue ]
+
+  db.query(sql, [values], (err, data)=>{
+      if(err) {
+        return res.json(err);
+      }
+      return res.json("added");
+
+  })
+});
 
   /*
   app.get('/users', (req, res)=> {
