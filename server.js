@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
 
+
 const app = express();
 app.use(cors())
 app.use(express.json())
@@ -10,19 +11,48 @@ const db = mysql.createConnection({
     host: "localhost",
     user: 'root',
     password: "2Oo21226@",
-    database: "user"
+    database: "fyp"
 })
 
 app.get('/', (req, res)=> {
     return res.json("From Backend Side");
   });
 
+  //Format date
+Date.prototype.yyyymmdd = function () {
+  var mm = (this.getMonth() + 1).toString(); // getMonth() is zero-based
+  var dd = this.getDate().toString();
+  return [
+    this.getFullYear(),
+    mm.length === 2 ? "" : "0",
+    mm,
+    dd.length === 2 ? "" : "0",
+    dd,
+  ].join(""); // padding
+};
+
+  function generateUniqueIdentifier() {
+    const date = new Date();
+    const todayString = date.yyyymmdd();
+  
+    // Generate a random string of alphanumeric characters
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let randomString = '';
+    for (let i = 0; i < 10; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      randomString += characters[randomIndex];
+    }
+  
+    // Concatenate the todayString and random string
+    const uniqueId = todayString + '_' + randomString;
+  
+    return uniqueId;
+  }
+
   //login
   app.post('/login', (req, res)=> {
-    const sql = "SELECT * FROM `register` WHERE `loginName` = ? AND `password` = ?"
+    const sql = "SELECT * FROM `user` WHERE `loginName` = ? AND `password` = ?"
 
-    //// Generate a unique identifier for the image
-  //const uniqueIdentifier = generateUniqueIdentifier();
     db.query(sql, [req.body.username, req.body.password], (err, data)=>{
         if(err) {
           return res.json(err);
@@ -38,9 +68,11 @@ app.get('/', (req, res)=> {
   //register
   app.post('/register', (req, res)=> {
 
-    const sql = "INSERT INTO `register`(`firstName`, `lastName`, `birthday`, `gender`, `email`, `phoneNumber`, `loginName`, `password`) VALUES (?)"
+    const sql = "INSERT INTO `user`(`userID`, `firstName`, `lastName`, `birthday`, `gender`, `email`, `phoneNumber`, `loginName`, `password`) VALUES (?)"
 
-    const values = [req.body.firstName, req.body.lastName, req.body.formatbirthday, req.body.gender, req.body.email, req.body.phoneNumber, req.body.loginName, req.body.password ]
+    // Generate a unique identifier
+    const uniqueIdentifier = generateUniqueIdentifier();
+    const values = [uniqueIdentifier, req.body.firstName, req.body.lastName, req.body.formatbirthday, req.body.gender, req.body.email, req.body.phoneNumber, req.body.loginName, req.body.password ]
 
     db.query(sql, [values], (err, data)=>{
         if(err) {
@@ -54,7 +86,7 @@ app.get('/', (req, res)=> {
   app.get('/getUserData', (req, res) => {
     const { loginName, password } = req.query;
   
-    const sql = "SELECT * FROM `register` WHERE `loginName` = ? AND `password` = ?";
+    const sql = "SELECT * FROM `user` WHERE `loginName` = ? AND `password` = ?";
   
     db.query(sql, [loginName, password], (err, data) => {
       if (err) {
@@ -121,9 +153,9 @@ app.get('/getGuild', (req, res)=> {
 app.post('/createGuildEvent', (req, res)=> {
 
   
-  const sql = "INSERT INTO `guildevent`(`eventName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `venue`) VALUES (?)"
+  const sql = "INSERT INTO `guildevent`(`eventName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `venue`, `guildName`) VALUES (?)"
 
-  const values = [req.body.eventName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.venue ]
+  const values = [req.body.eventName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.venue, req.body.guildName ]
 
   db.query(sql, [values], (err, data)=>{
       if(err) {
@@ -132,6 +164,24 @@ app.post('/createGuildEvent', (req, res)=> {
       return res.json("added");
 
   })
+});
+
+app.get('/getGuildEvent', (req, res)=> {
+  
+  const { guildName } = req.query;
+
+  const sql = "SELECT * FROM `guildevent` WHERE `guildName` = ?"
+
+  db.query(sql, [guildName], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    if (data.length > 0) {
+      return res.json(data);
+    } else {
+      return res.json("failed");
+    }
+  });
 });
 
   /*
