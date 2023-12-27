@@ -83,6 +83,27 @@ Date.prototype.yyyymmdd = function () {
     })
   });
 
+  //Initiate account
+  app.post('/initiateAccount', (req, res) => {
+    const { userID, firstName, lastName, birthday, gender, email, phoneNumber, loginName, password, workModeID, districtID, sportsID } = req.body;
+  
+    const sql = "UPDATE `user` SET `workModeID` = ?, `districtID` = ?, `sportsID` = ? WHERE `loginName` = ? AND `password` = ?";
+  
+    // Convert the sportsID array to a comma-separated string
+    const sportsIDString = req.body.sportsID.join(',');
+  
+    const values = [req.body.workModeID, req.body.districtID, sportsIDString, req.body.loginName, req.body.password];
+  
+    db.query(sql, values, (err, data) => {
+      if (err) {
+        return res.json(err);
+      }
+      return res.json("updated");
+    });
+  });
+
+
+  //Home
   app.get('/getUserData', (req, res) => {
     const { loginName, password } = req.query;
   
