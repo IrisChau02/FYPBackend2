@@ -83,6 +83,22 @@ Date.prototype.yyyymmdd = function () {
     })
   });
 
+//Initiate account
+app.post('/updateUser', (req, res) => {
+  const { userID, firstName, lastName, formatbirthday, gender, email, phoneNumber, loginName, password, userLogo } = req.body;
+
+  const sql = "UPDATE `user` SET `firstName` = ?, `lastName` = ?, `birthday` = ?, `gender` = ?, `email` = ?, `phoneNumber` = ?, `loginName` = ?, `password` = ?, `userLogo` = ? WHERE `userID` = ?";
+
+  const values = [req.body.firstName, req.body.lastName, req.body.formatbirthday, req.body.gender, req.body.email, req.body.phoneNumber, req.body.loginName, req.body.password, req.body.userLogo, req.body.userID];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
+});
+
   //Initiate account
   app.post('/initiateAccount', (req, res) => {
     const { userID, firstName, lastName, birthday, gender, email, phoneNumber, loginName, password, workModeID, districtID, sportsID } = req.body;
