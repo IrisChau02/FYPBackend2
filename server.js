@@ -85,11 +85,27 @@ Date.prototype.yyyymmdd = function () {
 
 //Initiate account
 app.post('/updateUser', (req, res) => {
-  const { userID, firstName, lastName, formatbirthday, gender, email, phoneNumber, loginName, password, userLogo } = req.body;
+  const { userID, firstName, lastName, formatbirthday, gender, email, phoneNumber, loginName, password, userLogo, userIntro} = req.body; 
 
-  const sql = "UPDATE `user` SET `firstName` = ?, `lastName` = ?, `birthday` = ?, `gender` = ?, `email` = ?, `phoneNumber` = ?, `loginName` = ?, `password` = ?, `userLogo` = ? WHERE `userID` = ?";
+  const sql = "UPDATE `user` SET `firstName` = ?, `lastName` = ?, `birthday` = ?, `gender` = ?, `email` = ?, `phoneNumber` = ?, `loginName` = ?, `password` = ?, `userLogo` = ?, `userIntro` = ? WHERE `userID` = ?";
 
-  const values = [req.body.firstName, req.body.lastName, req.body.formatbirthday, req.body.gender, req.body.email, req.body.phoneNumber, req.body.loginName, req.body.password, req.body.userLogo, req.body.userID];
+  const values = [req.body.firstName, req.body.lastName, req.body.formatbirthday, req.body.gender, req.body.email, req.body.phoneNumber, req.body.loginName, req.body.password, req.body.userLogo, req.body.userIntro, req.body.userID];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
+});
+
+
+app.post('/updateUserLogo', (req, res) => {
+  const { userID, userLogo } = req.body;
+
+  const sql = "UPDATE `user` SET `userLogo` = ? WHERE `userID` = ?";
+
+  const values = [req.body.userLogo, req.body.userID];
 
   db.query(sql, values, (err, data) => {
     if (err) {
@@ -117,6 +133,39 @@ app.post('/updateUser', (req, res) => {
       return res.json("updated");
     });
   });
+
+    app.post('/updateSportsID', (req, res) => {
+      const { userID, sportsID } = req.body;
+    
+      const sql = "UPDATE `user` SET `sportsID` = ? WHERE `userID` = ?";
+    
+      // Convert the sportsID array to a comma-separated string
+      const sportsIDString = req.body.sportsID.join(',');
+    
+      const values = [sportsIDString, req.body.userID];
+    
+      db.query(sql, values, (err, data) => {
+        if (err) {
+          return res.json(err);
+        }
+        return res.json("updated");
+      });
+    });
+
+    app.post('/updateWorkModeID', (req, res) => {
+      const { userID, sportsID } = req.body;
+    
+      const sql = "UPDATE `user` SET `workModeID` = ? WHERE `userID` = ?";
+    
+      const values = [req.body.workModeID, req.body.userID];
+    
+      db.query(sql, values, (err, data) => {
+        if (err) {
+          return res.json(err);
+        }
+        return res.json("updated");
+      });
+    });
 
 
   //Home
