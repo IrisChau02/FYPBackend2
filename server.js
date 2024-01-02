@@ -338,14 +338,15 @@ app.get('/getGuildDetailByName', (req, res) => {
 
 
 ///////////////////////////Guild Event/////////////////////////////
-app.post('/createGuildEvent', (req, res)=> {
+app.post('/createGuildEvent', (req, res)=> { 
 
+  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`) VALUES (?)"
   
-  const sql = "INSERT INTO `guildevent`(`eventName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `venue`, `guildName`) VALUES (?)"
-  const values = [req.body.eventName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.venue, req.body.guildName ]
+  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue]
 
   db.query(sql, [values], (err, data)=>{
       if(err) {
+        console.log(err)
         return res.json(err);
       }
       return res.json("added");
@@ -358,20 +359,32 @@ app.post('/createGuildEvent', (req, res)=> {
 app.get('/getGuildEvent', (req, res)=> {
   
   const { guildName } = req.query;
-
   const sql = "SELECT * FROM `guildevent` WHERE `guildName` = ?"
 
   db.query(sql, [guildName], (err, data) => {
     if (err) {
       return res.json(err);
     }
-    if (data.length > 0) {
-      return res.json(data);
-    } else {
-      return res.json("failed");
-    }
+    return res.json(data);
   });
+  
 });
+
+
+app.get('/getGuildEventByName', (req, res)=> {
+  
+  const { eventName } = req.query;
+  const sql = "SELECT * FROM `guildevent` WHERE `eventName` = ?"
+
+  db.query(sql, [eventName], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+  
+});
+
 
   /*
   app.get('/users', (req, res)=> {
