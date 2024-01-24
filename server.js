@@ -340,9 +340,9 @@ app.get('/getGuildDetailByName', (req, res) => {
 ///////////////////////////Guild Event/////////////////////////////
 app.post('/createGuildEvent', (req, res)=> { 
 
-  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`) VALUES (?)"
+  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`, `memberID`) VALUES (?)" 
   
-  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue]
+  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.userID, null]
 
   db.query(sql, [values], (err, data)=>{
       if(err) {
@@ -385,6 +385,48 @@ app.get('/getGuildEventByName', (req, res)=> {
   
 });
 
+///////////////////////////Guild Member List/////////////////////////////
+app.get('/getGuildMemberList', (req, res) => {
+  const { guildName } = req.query;
+
+  const sql = "SELECT * FROM `user` WHERE `guildName` = ? ";
+
+  db.query(sql, [guildName], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
+
+app.post('/addFriend', (req, res)=> { 
+  const { requestUserID, acceptUserID } = req.body;
+
+  const sql = "INSERT INTO `friendshipmap`(`requestUserID`, `acceptUserID`, `isAccept`)  VALUES (?)" 
+  const values = [requestUserID, acceptUserID, false]
+
+  db.query(sql, [values], (err, data)=>{
+      if(err) {
+        console.log(err)
+        return res.json(err);
+      }
+      return res.json("added");
+  })
+
+});
+
+app.get('/getUserFriendList', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM `friendshipmap` WHERE `requestUserID` = ? ";
+
+  db.query(sql, [userID], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
 
   /*
   app.get('/users', (req, res)=> {
