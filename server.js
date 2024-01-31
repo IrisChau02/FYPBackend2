@@ -487,6 +487,37 @@ app.get('/getUserFriendList', (req, res) => {
   });
 });
 
+//create new mission
+app.post('/createMission', (req, res)=> { 
+
+  const sql = "INSERT INTO `mission`(`userID`, `missionName`, `missionDetail`, `missionDifficulty`, `missionMode`, `isFinish`) VALUES (?)" 
+  
+  const values = [req.body.userID, req.body.missionName, req.body.missionDetail, req.body.missionDifficulty, req.body.missionMode, req.body.isFinish]
+
+  db.query(sql, [values], (err, data)=>{
+      if(err) {
+        console.log(err)
+        return res.json(err);
+      }
+      return res.json("added");
+
+  })
+
+});
+
+app.get('/getMissionList', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM `mission` WHERE `userID` = ? ";
+
+  db.query(sql, [userID], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
+
   /*
   app.get('/users', (req, res)=> {
     const sql = "SELECT * FROM users"
