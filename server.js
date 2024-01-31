@@ -357,7 +357,6 @@ app.post('/createGuildEvent', (req, res)=> {
 
 
 app.get('/getGuildEvent', (req, res)=> {
-  
   const { guildName } = req.query;
   const sql = "SELECT * FROM `guildevent` WHERE `guildName` = ?"
 
@@ -413,6 +412,66 @@ app.post('/addFriend', (req, res)=> {
       return res.json("added");
   })
 
+});
+
+app.post('/confirmAddFriend', (req, res) => {
+  const { requestUserID, acceptUserID } = req.body;
+
+  const sql = "UPDATE `friendshipmap` SET `isAccept` = ? WHERE `requestUserID` = ? AND `acceptUserID` = ?";
+  const values = [true, requestUserID, acceptUserID];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
+});
+
+app.get('/getWaitingFriendList', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM `friendshipmap` WHERE `acceptUserID` = ? AND `isAccept` = ?";
+
+  const values = [userID, false] //0 = false, mean not accept
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
+
+app.get('/getFriendListWithDetail', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM `friendshipmap` JOIN `user` ON friendshipmap.requestUserID = user.userID WHERE `acceptUserID` = ? AND `isAccept` = ?";
+
+  const values = [userID, true]; 
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
+
+app.get('/getWaitingFriendListWithDetail', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM `friendshipmap` JOIN `user` ON friendshipmap.requestUserID = user.userID WHERE `acceptUserID` = ? AND `isAccept` = ?";
+
+  const values = [userID, false]; // 0 = false, meaning not accepted
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
 });
 
 app.get('/getUserFriendList', (req, res) => {
