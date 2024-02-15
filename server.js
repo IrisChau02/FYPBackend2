@@ -230,8 +230,8 @@ app.post('/updateUserLogo', (req, res) => {
 
 ///////////////////////////Guild/////////////////////////////
 app.post('/createGuild', (req, res) => {
-  const guildSql = "INSERT INTO `guild`(`guildName`, `guildIntro`, `level`, `memberNo`, `guildLogo`, `districtID`) VALUES (?)";
-  const guildValues = [req.body.guildName, req.body.guildIntro, req.body.level, req.body.member, req.body.guildLogo, req.body.districtID];
+  const guildSql = "INSERT INTO `guild`(`guildName`, `guildIntro`, `masterUserID`, `level`, `maxMemberLimit`, `memberNo`, `guildLogo`, `districtID`) VALUES (?)";
+  const guildValues = [req.body.guildName, req.body.guildIntro, req.body.userID, req.body.level, 20, req.body.member, req.body.guildLogo, req.body.districtID];
 
   const userSql = "UPDATE `user` SET `guildName` = ? WHERE `userID` = ?";
   const userValues = [req.body.guildName, req.body.userID];
@@ -264,6 +264,7 @@ app.post('/createGuild', (req, res) => {
 
 app.post('/joinGuild', (req, res) => {
   const { userID, guildName, memberNo } = req.body;
+
   const newMemberNo = memberNo + 1;
 
   const guildSql = "UPDATE guild SET memberNo = ? WHERE guildName = ?";
