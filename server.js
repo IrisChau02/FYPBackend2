@@ -117,14 +117,14 @@ app.post('/updateUserLogo', (req, res) => {
 
   //Initiate account
   app.post('/initiateAccount', (req, res) => {
-    const { userID, firstName, lastName, birthday, gender, email, phoneNumber, loginName, password, workModeID, districtID, sportsID } = req.body;
+    const { loginName, password, workModeID, districtID, sportsID, timeslotID } = req.body;
   
-    const sql = "UPDATE `user` SET `workModeID` = ?, `districtID` = ?, `sportsID` = ? WHERE `loginName` = ? AND `password` = ?";
+    const sql = "UPDATE `user` SET `workModeID` = ?, `districtID` = ?, `sportsID` = ? , `timeslotID` = ? WHERE `loginName` = ? AND `password` = ?";
   
-    // Convert the sportsID array to a comma-separated string
+    // Convert the sportsID array to a comma-separated string 
     const sportsIDString = req.body.sportsID.join(',');
   
-    const values = [req.body.workModeID, req.body.districtID, sportsIDString, req.body.loginName, req.body.password];
+    const values = [req.body.workModeID, req.body.districtID, sportsIDString, req.body.timeslotID, req.body.loginName, req.body.password];
   
     db.query(sql, values, (err, data) => {
       if (err) {
@@ -158,6 +158,21 @@ app.post('/updateUserLogo', (req, res) => {
       const sql = "UPDATE `user` SET `workModeID` = ? WHERE `userID` = ?";
     
       const values = [req.body.workModeID, req.body.userID];
+    
+      db.query(sql, values, (err, data) => {
+        if (err) {
+          return res.json(err);
+        }
+        return res.json("updated");
+      });
+    });
+
+    app.post('/updateTimeslotID', (req, res) => {
+      const { userID, timeslotID } = req.body;
+    
+      const sql = "UPDATE `user` SET `timeslotID` = ? WHERE `userID` = ?";
+    
+      const values = [req.body.timeslotID, req.body.userID];
     
       db.query(sql, values, (err, data) => {
         if (err) {
@@ -222,6 +237,14 @@ app.post('/updateUserLogo', (req, res) => {
 
   app.get('/getSports', (req, res)=> {
     const sql = "SELECT * FROM `sports`"
+    db.query(sql, (err, data)=>{
+        if(err) return res.json(err);
+        return res.json(data);
+    })
+  });
+
+    app.get('/getTimeslot', (req, res)=> {
+    const sql = "SELECT * FROM `timeslot`"
     db.query(sql, (err, data)=>{
         if(err) return res.json(err);
         return res.json(data);
