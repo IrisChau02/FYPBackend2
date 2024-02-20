@@ -8,17 +8,17 @@ app.use(cors())
 app.use(express.json())
 
 const db = mysql.createConnection({
-    host: "localhost",
-    user: 'root',
-    password: "2Oo21226@",
-    database: "fyp"
+  host: "localhost",
+  user: 'root',
+  password: "2Oo21226@",
+  database: "fyp"
 })
 
-app.get('/', (req, res)=> {
-    return res.json("From Backend Side");
-  });
+app.get('/', (req, res) => {
+  return res.json("From Backend Side");
+});
 
-  //Format date
+//Format date
 Date.prototype.yyyymmdd = function () {
   var mm = (this.getMonth() + 1).toString(); // getMonth() is zero-based
   var dd = this.getDate().toString();
@@ -31,61 +31,61 @@ Date.prototype.yyyymmdd = function () {
   ].join(""); // padding
 };
 
-  function generateUniqueIdentifier() {
-    const date = new Date();
-    const todayString = date.yyyymmdd();
-  
-    // Generate a random string of alphanumeric characters
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let randomString = '';
-    for (let i = 0; i < 10; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      randomString += characters[randomIndex];
-    }
-  
-    // Concatenate the todayString and random string
-    const uniqueId = todayString + '_' + randomString;
-  
-    return uniqueId;
+function generateUniqueIdentifier() {
+  const date = new Date();
+  const todayString = date.yyyymmdd();
+
+  // Generate a random string of alphanumeric characters
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < 10; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    randomString += characters[randomIndex];
   }
 
-  //login
-  app.post('/login', (req, res)=> {
-    const sql = "SELECT * FROM `user` WHERE `loginName` = ? AND `password` = ?"
+  // Concatenate the todayString and random string
+  const uniqueId = todayString + '_' + randomString;
 
-    db.query(sql, [req.body.username, req.body.password], (err, data)=>{
-        if(err) {
-          return res.json(err);
-        }
-        if(data.length>0){
-          return res.json(data);
-        }else{
-          return res.json("failed");
-        }
-    })
-  });
+  return uniqueId;
+}
 
-  //register
-  app.post('/register', (req, res)=> {
+//login
+app.post('/login', (req, res) => {
+  const sql = "SELECT * FROM `user` WHERE `loginName` = ? AND `password` = ?"
 
-    const sql = "INSERT INTO `user`(`userID`, `firstName`, `lastName`, `birthday`, `gender`, `email`, `phoneNumber`, `loginName`, `password`) VALUES (?)"
+  db.query(sql, [req.body.username, req.body.password], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    if (data.length > 0) {
+      return res.json(data);
+    } else {
+      return res.json("failed");
+    }
+  })
+});
 
-    // Generate a unique identifier
-    const uniqueIdentifier = generateUniqueIdentifier();
-    const values = [uniqueIdentifier, req.body.firstName, req.body.lastName, req.body.formatbirthday, req.body.gender, req.body.email, req.body.phoneNumber, req.body.loginName, req.body.password ]
+//register
+app.post('/register', (req, res) => {
 
-    db.query(sql, [values], (err, data)=>{
-        if(err) {
-          return res.json(err);
-        }
-        return res.json("added");
-  
-    })
-  });
+  const sql = "INSERT INTO `user`(`userID`, `firstName`, `lastName`, `birthday`, `gender`, `email`, `phoneNumber`, `loginName`, `password`) VALUES (?)"
+
+  // Generate a unique identifier
+  const uniqueIdentifier = generateUniqueIdentifier();
+  const values = [uniqueIdentifier, req.body.firstName, req.body.lastName, req.body.formatbirthday, req.body.gender, req.body.email, req.body.phoneNumber, req.body.loginName, req.body.password]
+
+  db.query(sql, [values], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json("added");
+
+  })
+});
 
 //Initiate account
 app.post('/updateUser', (req, res) => {
-  const { userID, firstName, lastName, formatbirthday, gender, email, phoneNumber, loginName, password, userLogo, userIntro} = req.body; 
+  const { userID, firstName, lastName, formatbirthday, gender, email, phoneNumber, loginName, password, userLogo, userIntro } = req.body;
 
   const sql = "UPDATE `user` SET `firstName` = ?, `lastName` = ?, `birthday` = ?, `gender` = ?, `email` = ?, `phoneNumber` = ?, `loginName` = ?, `password` = ?, `userLogo` = ?, `userIntro` = ? WHERE `userID` = ?";
 
@@ -115,141 +115,141 @@ app.post('/updateUserLogo', (req, res) => {
   });
 });
 
-  //Initiate account
-  app.post('/initiateAccount', (req, res) => {
-    const { loginName, password, workModeID, districtID, sportsID, timeslotID } = req.body;
-  
-    const sql = "UPDATE `user` SET `workModeID` = ?, `districtID` = ?, `sportsID` = ? , `timeslotID` = ? WHERE `loginName` = ? AND `password` = ?";
-  
-    // Convert the sportsID array to a comma-separated string 
-    const sportsIDString = req.body.sportsID.join(',');
-  
-    const values = [req.body.workModeID, req.body.districtID, sportsIDString, req.body.timeslotID, req.body.loginName, req.body.password];
-  
-    db.query(sql, values, (err, data) => {
-      if (err) {
-        return res.json(err);
-      }
-      return res.json("updated");
-    });
+//Initiate account
+app.post('/initiateAccount', (req, res) => {
+  const { loginName, password, workModeID, districtID, sportsID, timeslotID } = req.body;
+
+  const sql = "UPDATE `user` SET `workModeID` = ?, `districtID` = ?, `sportsID` = ? , `timeslotID` = ? WHERE `loginName` = ? AND `password` = ?";
+
+  // Convert the sportsID array to a comma-separated string 
+  const sportsIDString = req.body.sportsID.join(',');
+
+  const values = [req.body.workModeID, req.body.districtID, sportsIDString, req.body.timeslotID, req.body.loginName, req.body.password];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json("updated");
   });
+});
 
-    app.post('/updateSportsID', (req, res) => {
-      const { userID, sportsID } = req.body;
-    
-      const sql = "UPDATE `user` SET `sportsID` = ? WHERE `userID` = ?";
-    
-      // Convert the sportsID array to a comma-separated string
-      const sportsIDString = req.body.sportsID.join(',');
-    
-      const values = [sportsIDString, req.body.userID];
-    
-      db.query(sql, values, (err, data) => {
-        if (err) {
-          return res.json(err);
-        }
-        return res.json("updated");
-      });
-    });
+app.post('/updateSportsID', (req, res) => {
+  const { userID, sportsID } = req.body;
 
-    app.post('/updateWorkModeID', (req, res) => {
-      const { userID, sportsID } = req.body;
-    
-      const sql = "UPDATE `user` SET `workModeID` = ? WHERE `userID` = ?";
-    
-      const values = [req.body.workModeID, req.body.userID];
-    
-      db.query(sql, values, (err, data) => {
-        if (err) {
-          return res.json(err);
-        }
-        return res.json("updated");
-      });
-    });
+  const sql = "UPDATE `user` SET `sportsID` = ? WHERE `userID` = ?";
 
-    app.post('/updateTimeslotID', (req, res) => {
-      const { userID, timeslotID } = req.body;
-    
-      const sql = "UPDATE `user` SET `timeslotID` = ? WHERE `userID` = ?";
-    
-      const values = [req.body.timeslotID, req.body.userID];
-    
-      db.query(sql, values, (err, data) => {
-        if (err) {
-          return res.json(err);
-        }
-        return res.json("updated");
-      });
-    });
+  // Convert the sportsID array to a comma-separated string
+  const sportsIDString = req.body.sportsID.join(',');
 
+  const values = [sportsIDString, req.body.userID];
 
-  //Home
-  app.get('/getUserData', (req, res) => {
-    const { loginName, password } = req.query;
-  
-    const sql = "SELECT * FROM `user` WHERE `loginName` = ? AND `password` = ?";
-  
-    db.query(sql, [loginName, password], (err, data) => {
-      if (err) {
-        return res.json(err);
-      }
-      if (data.length > 0) {
-        return res.json(data);
-      } else {
-        return res.json("failed");
-      }
-    });
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json("updated");
   });
+});
 
-    //Home
-  app.get('/getUserDataByID', (req, res) => {
-    const { userID } = req.query;
-  
-    const sql = "SELECT * FROM `user` WHERE `userID` = ?";
-  
-    db.query(sql, [userID], (err, data) => {
-      if (err) {
-        return res.json(err);
-      }
-      if (data.length > 0) {
-        return res.json(data);
-      } else {
-        return res.json("failed");
-      }
-    });
-  });
+app.post('/updateWorkModeID', (req, res) => {
+  const { userID, sportsID } = req.body;
 
-  app.get('/getDistrict', (req, res)=> {
-    const sql = "SELECT * FROM `district`"
-    db.query(sql, (err, data)=>{
-        if(err) return res.json(err);
-        return res.json(data);
-    })
-  });
+  const sql = "UPDATE `user` SET `workModeID` = ? WHERE `userID` = ?";
 
-  app.get('/getWorkingMode', (req, res)=> {
-    const sql = "SELECT * FROM `workingmode`"
-    db.query(sql, (err, data)=>{
-        if(err) return res.json(err);
-        return res.json(data);
-    })
-  });
+  const values = [req.body.workModeID, req.body.userID];
 
-  app.get('/getSports', (req, res)=> {
-    const sql = "SELECT * FROM `sports`"
-    db.query(sql, (err, data)=>{
-        if(err) return res.json(err);
-        return res.json(data);
-    })
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json("updated");
   });
+});
 
-    app.get('/getTimeslot', (req, res)=> {
-    const sql = "SELECT * FROM `timeslot`"
-    db.query(sql, (err, data)=>{
-        if(err) return res.json(err);
-        return res.json(data);
-    })
+app.post('/updateTimeslotID', (req, res) => {
+  const { userID, timeslotID } = req.body;
+
+  const sql = "UPDATE `user` SET `timeslotID` = ? WHERE `userID` = ?";
+
+  const values = [req.body.timeslotID, req.body.userID];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json("updated");
   });
+});
+
+
+//Home
+app.get('/getUserData', (req, res) => {
+  const { loginName, password } = req.query;
+
+  const sql = "SELECT * FROM `user` WHERE `loginName` = ? AND `password` = ?";
+
+  db.query(sql, [loginName, password], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    if (data.length > 0) {
+      return res.json(data);
+    } else {
+      return res.json("failed");
+    }
+  });
+});
+
+//Home
+app.get('/getUserDataByID', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM `user` WHERE `userID` = ?";
+
+  db.query(sql, [userID], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    if (data.length > 0) {
+      return res.json(data);
+    } else {
+      return res.json("failed");
+    }
+  });
+});
+
+app.get('/getDistrict', (req, res) => {
+  const sql = "SELECT * FROM `district`"
+  db.query(sql, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  })
+});
+
+app.get('/getWorkingMode', (req, res) => {
+  const sql = "SELECT * FROM `workingmode`"
+  db.query(sql, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  })
+});
+
+app.get('/getSports', (req, res) => {
+  const sql = "SELECT * FROM `sports`"
+  db.query(sql, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  })
+});
+
+app.get('/getTimeslot', (req, res) => {
+  const sql = "SELECT * FROM `timeslot`"
+  db.query(sql, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  })
+});
 
 ///////////////////////////Guild/////////////////////////////
 app.post('/createGuild', (req, res) => {
@@ -323,22 +323,22 @@ app.post('/joinGuild', (req, res) => {
 });
 
 
-app.get('/getGuild', (req, res)=> {
+app.get('/getGuild', (req, res) => {
   const sql = "SELECT * FROM `guild`"
-  db.query(sql, (err, data)=>{
-      if(err) return res.json(err);
-      return res.json(data);
+  db.query(sql, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
   })
 });
 
-app.get('/getGuildByDistrict', (req, res)=> {
+app.get('/getGuildByDistrict', (req, res) => {
   const { districtID } = req.query;
 
   const sql = "SELECT * FROM `guild`  WHERE `districtID` = ?"
 
   db.query(sql, [districtID], (err, data) => {
-      if(err) return res.json(err);
-      return res.json(data);
+    if (err) return res.json(err);
+    return res.json(data);
   })
 });
 
@@ -362,25 +362,25 @@ app.get('/getGuildDetailByName', (req, res) => {
 
 
 ///////////////////////////Guild Event/////////////////////////////
-app.post('/createGuildEvent', (req, res)=> { 
+app.post('/createGuildEvent', (req, res) => {
 
-  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`, `memberID`) VALUES (?)" 
-  
+  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`, `memberID`) VALUES (?)"
+
   const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.userID, null]
 
-  db.query(sql, [values], (err, data)=>{
-      if(err) {
-        console.log(err)
-        return res.json(err);
-      }
-      return res.json("added");
+  db.query(sql, [values], (err, data) => {
+    if (err) {
+      console.log(err)
+      return res.json(err);
+    }
+    return res.json("added");
 
   })
 
 });
 
 
-app.get('/getGuildEvent', (req, res)=> {
+app.get('/getGuildEvent', (req, res) => {
   const { guildName } = req.query;
   const sql = "SELECT * FROM `guildevent` WHERE `guildName` = ?"
 
@@ -390,12 +390,12 @@ app.get('/getGuildEvent', (req, res)=> {
     }
     return res.json(data);
   });
-  
+
 });
 
 
-app.get('/getGuildEventByName', (req, res)=> {
-  
+app.get('/getGuildEventByName', (req, res) => {
+
   const { eventName } = req.query;
   const sql = "SELECT * FROM `guildevent` WHERE `eventName` = ?"
 
@@ -405,7 +405,7 @@ app.get('/getGuildEventByName', (req, res)=> {
     }
     return res.json(data);
   });
-  
+
 });
 
 ///////////////////////////Guild Member List/////////////////////////////
@@ -422,18 +422,18 @@ app.get('/getGuildMemberList', (req, res) => {
   });
 });
 
-app.post('/addFriend', (req, res)=> { 
+app.post('/addFriend', (req, res) => {
   const { requestUserID, acceptUserID } = req.body;
 
-  const sql = "INSERT INTO `friendshipmap`(`requestUserID`, `acceptUserID`, `isAccept`)  VALUES (?)" 
+  const sql = "INSERT INTO `friendshipmap`(`requestUserID`, `acceptUserID`, `isAccept`)  VALUES (?)"
   const values = [requestUserID, acceptUserID, false]
 
-  db.query(sql, [values], (err, data)=>{
-      if(err) {
-        console.log(err)
-        return res.json(err);
-      }
-      return res.json("added");
+  db.query(sql, [values], (err, data) => {
+    if (err) {
+      console.log(err)
+      return res.json(err);
+    }
+    return res.json("added");
   })
 
 });
@@ -468,21 +468,6 @@ app.get('/getWaitingFriendList', (req, res) => {
   });
 });
 
-app.get('/getFriendListWithDetail', (req, res) => {
-  const { userID } = req.query;
-
-  const sql = "SELECT * FROM `friendshipmap` JOIN `user` ON friendshipmap.requestUserID = user.userID WHERE `acceptUserID` = ? AND `isAccept` = ?";
-
-  const values = [userID, true]; 
-
-  db.query(sql, values, (err, data) => {
-    if (err) {
-      return res.json(err);
-    }
-    return res.json(data);
-  });
-});
-
 app.get('/getWaitingFriendListWithDetail', (req, res) => {
   const { userID } = req.query;
 
@@ -501,9 +486,9 @@ app.get('/getWaitingFriendListWithDetail', (req, res) => {
 app.get('/getUserFriendList', (req, res) => {
   const { userID } = req.query;
 
-  const sql = "SELECT * FROM `friendshipmap` WHERE `requestUserID` = ? ";
+  const sql = "SELECT * FROM `friendshipmap` WHERE `requestUserID` = ? OR `acceptUserID` = ?";
 
-  db.query(sql, [userID], (err, data) => {
+  db.query(sql, [userID, userID], (err, data) => {
     if (err) {
       return res.json(err);
     }
@@ -511,19 +496,50 @@ app.get('/getUserFriendList', (req, res) => {
   });
 });
 
-//create new mission
-app.post('/createMission', (req, res)=> { 
-
-  const sql = "INSERT INTO `mission`(`userID`, `missionName`, `missionDetail`, `missionDifficulty`, `missionMode`, `isFinish`) VALUES (?)" 
+app.get('/getFriendListWithDetail', (req, res) => {
+  const { userID } = req.query;
   
+  const sql = "SELECT * FROM friendshipmap JOIN user ON friendshipmap.requestUserID = user.userID WHERE acceptUserID = ? AND isAccept = ?";
+  
+  const values = [userID, true];
+  
+  db.query(sql, values, (err, data) => {
+  if (err) {
+  return res.json(err);
+  }
+  return res.json(data);
+  });
+  });
+
+  app.get('/getRequestFriendListWithDetail', (req, res) => {
+    const { userID } = req.query;
+    
+    const sql = "SELECT * FROM friendshipmap JOIN user ON friendshipmap.acceptUserID = user.userID WHERE requestUserID = ? AND isAccept = ?";
+    
+    const values = [userID, true];
+    
+    db.query(sql, values, (err, data) => {
+    if (err) {
+    return res.json(err);
+    }
+    return res.json(data);
+    });
+    });
+
+
+//create new mission
+app.post('/createMission', (req, res) => {
+
+  const sql = "INSERT INTO `mission`(`userID`, `missionName`, `missionDetail`, `missionDifficulty`, `missionMode`, `isFinish`) VALUES (?)"
+
   const values = [req.body.userID, req.body.missionName, req.body.missionDetail, req.body.missionDifficulty, req.body.missionMode, req.body.isFinish]
 
-  db.query(sql, [values], (err, data)=>{
-      if(err) {
-        console.log(err)
-        return res.json(err);
-      }
-      return res.json("added");
+  db.query(sql, [values], (err, data) => {
+    if (err) {
+      console.log(err)
+      return res.json(err);
+    }
+    return res.json("added");
 
   })
 
@@ -542,15 +558,15 @@ app.get('/getMissionList', (req, res) => {
   });
 });
 
-  /*
-  app.get('/users', (req, res)=> {
-    const sql = "SELECT * FROM users"
-    db.query(sql, (err, data)=>{
-        if(err) return res.json(err);
-        return res.json(data);
-    })
-  });*/
+/*
+app.get('/users', (req, res)=> {
+  const sql = "SELECT * FROM users"
+  db.query(sql, (err, data)=>{
+      if(err) return res.json(err);
+      return res.json(data);
+  })
+});*/
 
-  app.listen(3000, ()=> {
-    console.log("listening");
-  });
+app.listen(3000, () => {
+  console.log("listening");
+});
