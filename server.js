@@ -259,6 +259,27 @@ app.post('/createGuild', (req, res) => {
   const userSql = "UPDATE `user` SET `guildName` = ? WHERE `userID` = ?";
   const userValues = [req.body.guildName, req.body.userID];
 
+  /********************************************/
+  //create the guild mission
+  const birthday = new Date(req.body.birthday);
+  const today = new Date();
+  const age = today.getFullYear() - birthday.getFullYear();
+
+   // Check the age category and find the corresponding mission targets
+   let missionTarget;
+   if (age <= 14) {
+     missionTarget = 'Child';
+   } else if (age <= 64) {
+     missionTarget = 'Adult';
+   } else {
+     missionTarget = 'Elder';
+   }
+
+   // Query the 'mission' table for the corresponding mission IDs
+   const selectMissionSql = "SELECT `missionID` FROM `mission` WHERE `missionTarget` = ?";
+   const selectMissionValues = [missionTarget];
+   /********************************************/
+
   db.beginTransaction((err) => {
     if (err) {
       return res.json(err);
@@ -274,11 +295,29 @@ app.post('/createGuild', (req, res) => {
           db.rollback(() => res.json(err));
         }
 
-        db.commit((err) => {
+        db.query(selectMissionSql, selectMissionValues, (err, missionData) => {
           if (err) {
             db.rollback(() => res.json(err));
           }
-          return res.json("added");
+
+          const missionIDs = missionData.map((row) => row.missionID);
+
+          const insertMissionSql = "INSERT INTO `missionusermap` (`userID`, `missionID`, `isSystem`, `isFinish`) VALUES ?";
+          const insertMissionValues = missionIDs.map((missionID) => [req.body.userID, missionID, true, false]);
+
+
+          db.query(insertMissionSql, [insertMissionValues], (err, missionInsertResult) => {
+            if (err) {
+              db.rollback(() => res.json(err));
+            }
+            
+            db.commit((err) => {
+              if (err) {
+                db.rollback(() => res.json(err));
+              }
+              return res.json("added");
+            });
+          });
         });
       });
     });
@@ -286,7 +325,7 @@ app.post('/createGuild', (req, res) => {
 });
 
 app.post('/joinGuild', (req, res) => {
-  const { userID, guildName, memberNo } = req.body;
+  const { userID, birthday, guildName, memberNo } = req.body;
 
   const newMemberNo = memberNo + 1;
 
@@ -295,6 +334,29 @@ app.post('/joinGuild', (req, res) => {
 
   const userSql = "UPDATE user SET guildName = ? WHERE userID = ?";
   const userValues = [guildName, userID];
+
+  /********************************************/
+  // Create the guild mission
+  const birth = new Date(birthday);
+  const today = new Date();
+  const age = today.getFullYear() - birth.getFullYear();
+
+  // Check the age category and find the corresponding mission targets
+  let missionTarget;
+  if (age <= 14) {
+    missionTarget = 'Child';
+  } else if (age <= 64) {
+    missionTarget = 'Adult';
+  } else {
+    missionTarget = 'Elder';
+  }
+
+  console.log(missionTarget)
+
+  // Query the 'mission' table for the corresponding mission IDs
+  const selectMissionSql = "SELECT `missionID` FROM `mission` WHERE `missionTarget` = ?";
+  const selectMissionValues = [missionTarget];
+  /********************************************/
 
   db.beginTransaction((err) => {
     if (err) {
@@ -311,11 +373,28 @@ app.post('/joinGuild', (req, res) => {
           db.rollback(() => res.json(err));
         }
 
-        db.commit((err) => {
+        db.query(selectMissionSql, selectMissionValues, (err, missionData) => {
           if (err) {
             db.rollback(() => res.json(err));
           }
-          return res.json("updated");
+
+          const missionIDs = missionData.map((row) => row.missionID);
+
+          const insertMissionSql = "INSERT INTO `missionusermap` (`userID`, `missionID`, `isSystem`, `isFinish`) VALUES ?";
+          const insertMissionValues = missionIDs.map((missionID) => [userID, missionID, true, false]);
+
+          db.query(insertMissionSql, [insertMissionValues], (err, missionInsertResult) => {
+            if (err) {
+              db.rollback(() => res.json(err));
+            }
+
+            db.commit((err) => {
+              if (err) {
+                db.rollback(() => res.json(err));
+              }
+              return res.json("updated");
+            });
+          });
         });
       });
     });
@@ -527,6 +606,7 @@ app.get('/getFriendListWithDetail', (req, res) => {
     });
 
 
+    /*
 //create new mission
 app.post('/createMission', (req, res) => {
 
@@ -544,11 +624,16 @@ app.post('/createMission', (req, res) => {
   })
 
 });
+*/
 
 app.get('/getMissionList', (req, res) => {
   const { userID } = req.query;
 
-  const sql = "SELECT * FROM `mission` WHERE `userID` = ? ";
+  const sql = `
+    SELECT missionusermap.*, mission.*
+    FROM missionusermap
+    INNER JOIN mission ON missionusermap.missionID = mission.missionID
+    WHERE missionusermap.userID = ?`;
 
   db.query(sql, [userID], (err, data) => {
     if (err) {
@@ -557,6 +642,8 @@ app.get('/getMissionList', (req, res) => {
     return res.json(data);
   });
 });
+
+
 
 /*
 app.get('/users', (req, res)=> {
