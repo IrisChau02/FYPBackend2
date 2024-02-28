@@ -606,13 +606,13 @@ app.get('/getFriendListWithDetail', (req, res) => {
     });
 
 
-    /*
+    
 //create new mission
 app.post('/createMission', (req, res) => {
 
-  const sql = "INSERT INTO `mission`(`userID`, `missionName`, `missionDetail`, `missionDifficulty`, `missionMode`, `isFinish`) VALUES (?)"
+  const sql = "INSERT INTO `missionusermap`(`userID`, `isSystem`, `missionName`, `missionDetail`, `missionMode`, `missionDifficulty`, `isFinish`) VALUES (?)"
 
-  const values = [req.body.userID, req.body.missionName, req.body.missionDetail, req.body.missionDifficulty, req.body.missionMode, req.body.isFinish]
+  const values = [req.body.userID, false, req.body.missionName, req.body.missionDetail, req.body.missionMode, req.body.missionDifficulty, req.body.isFinish]
 
   db.query(sql, [values], (err, data) => {
     if (err) {
@@ -624,16 +624,17 @@ app.post('/createMission', (req, res) => {
   })
 
 });
-*/
 
-app.get('/getMissionList', (req, res) => {
+
+
+app.get('/getSystemMissionList', (req, res) => {
   const { userID } = req.query;
 
   const sql = `
     SELECT missionusermap.*, mission.*
     FROM missionusermap
     INNER JOIN mission ON missionusermap.missionID = mission.missionID
-    WHERE missionusermap.userID = ?`;
+    WHERE missionusermap.userID = ? AND missionusermap.isSystem = true`;
 
   db.query(sql, [userID], (err, data) => {
     if (err) {
@@ -642,6 +643,117 @@ app.get('/getMissionList', (req, res) => {
     return res.json(data);
   });
 });
+
+app.get('/getSelfDefineMissionList', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM `missionusermap` WHERE `userID` = ? AND missionusermap.isSystem = false";
+
+  db.query(sql, [userID], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
+
+app.post('/finishMission', (req, res) => {
+  const { userID, missionID, missionName, missionDetail, missionMode, missionDifficulty, isSystem, isFinish, missionPhoto, missionLastDate, missionKeepTime } = req.body;
+
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const formatToday = `${year}-${month}-${day}`;
+
+  let updatedMissionKeepTime = missionKeepTime;
+
+  if (missionLastDate) {
+    const lastDate = new Date(missionLastDate);
+    let timeDifferenceInMilliseconds = today.getTime() - lastDate.getTime();
+
+    if (missionMode === 'Daily') {
+      const twentyFourHoursInMilliseconds = 24 * 60 * 60 * 1000;
+      if (timeDifferenceInMilliseconds >= twentyFourHoursInMilliseconds) {
+        updatedMissionKeepTime += 1;
+      } else {
+        updatedMissionKeepTime = 1;
+      }
+    } else if (missionMode === 'Weekly') {
+      const oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000;
+      if (timeDifferenceInMilliseconds >= oneWeekInMilliseconds) {
+        updatedMissionKeepTime += 1;
+      } else {
+        updatedMissionKeepTime = 1;
+      }
+    }
+  } else {
+    // Handle the case when missionLastDate is empty
+    updatedMissionKeepTime = 1;
+  }
+
+  let updatedCheckPoint = null;
+  const originalCheckPointSql = "SELECT `checkPoint` FROM `user` WHERE `userID` = ?";
+  const originalCheckPointValues = [userID];
+
+  db.query(originalCheckPointSql, originalCheckPointValues, (cpErr, cpData) => {
+    if (cpErr) {
+      console.log(cpErr);
+      return res.json(cpErr);
+    }
+
+    if (cpData.length === 1) {
+      const originalCheckPoint = cpData[0].checkPoint;
+
+      if (missionDifficulty === 'Easy') {
+        updatedCheckPoint = originalCheckPoint + 1;
+      } else if (missionDifficulty === 'Normal') {
+        updatedCheckPoint = originalCheckPoint + 2;
+      } else if (missionDifficulty === 'Medium') {
+        updatedCheckPoint = originalCheckPoint + 3;
+      } else if (missionDifficulty === 'Hard') {
+        updatedCheckPoint = originalCheckPoint + 4;
+      }
+
+      let sql;
+      let values;
+      
+      if (isSystem === false) {
+        //use mission name
+        sql =
+          "UPDATE `missionusermap` SET `isFinish` = ?, `missionPhoto` = ?, `missionLastDate` = ?, `missionKeepTime` = ? WHERE `userID` = ? AND `missionName` = ?";
+        values = [true, missionPhoto, formatToday, updatedMissionKeepTime, userID, missionName];
+      } else {
+        //use mission ID
+        sql =
+          "UPDATE `missionusermap` SET `isFinish` = ?, `missionPhoto` = ?, `missionLastDate` = ?, `missionKeepTime` = ? WHERE `userID` = ? AND `missionID` = ?";
+        values = [true, missionPhoto, formatToday, updatedMissionKeepTime, userID, missionID];
+      }
+
+      db.query(sql, values, (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.json(err);
+        }
+
+        const userSql = "UPDATE `user` SET `checkPoint` = ? WHERE `userID` = ?";
+        const userValues = [updatedCheckPoint, userID];
+
+        db.query(userSql, userValues, (userErr, userData) => {
+          if (userErr) {
+            console.log(userErr);
+            return res.json(userErr);
+          }
+          return res.json("updated");
+        });
+      });
+    } else {
+      return res.json("User not found");
+    }
+  });
+});
+
+
 
 
 
