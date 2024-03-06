@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
+var cron = require('node-cron');
 
 
 const app = express();
@@ -48,6 +49,117 @@ function generateUniqueIdentifier() {
 
   return uniqueId;
 }
+
+function areDatesInSameWeek(date1, date2) {
+  const firstDate = new Date(date1);
+  const secondDate = new Date(date2);
+
+  // Check if the dates have the same year and month
+  if (
+    firstDate.getFullYear() === secondDate.getFullYear() &&
+    firstDate.getMonth() === secondDate.getMonth()
+  ) {
+    // Get the start of the month
+    const startOfMonth = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+
+    // Get the week numbers for each date, counting from the start of the month
+    const firstWeek = Math.ceil((firstDate.getDate() + startOfMonth.getDay()) / 7);
+    const secondWeek = Math.ceil((secondDate.getDate() + startOfMonth.getDay()) / 7);
+
+    // Compare the week numbers
+    return firstWeek === secondWeek;
+  }
+
+  // Dates are not in the same year and month
+  return false;
+}
+
+
+// Refresh daily mission every day at midnight
+cron.schedule('0 0 * * *', () => {
+  const selfMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE `missionMode` = 'Daily' AND `isSystem` = false";
+  const selfMissionCuDaysql = `UPDATE \`missionusermap\` SET \`missionKeepTime\` = 0 WHERE \`missionMode\` = 'Daily' AND \`isSystem\` = false AND DATE(\`missionLastDate\`) != DATE(DATE_SUB(NOW(), INTERVAL 1 DAY))`;
+
+  const systemMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE missionusermap.isSystem = true AND missionID IN (SELECT missionID FROM `mission` WHERE missionMode = 'Daily')";
+  const systemMissionCuDaysql = `UPDATE \`missionusermap\` SET \`missionKeepTime\` = 0 WHERE \`isSystem\` = true AND DATE(\`missionLastDate\`) != DATE(DATE_SUB(NOW(), INTERVAL 1 DAY)) AND missionID IN (SELECT missionID FROM \`mission\` WHERE missionMode = 'Daily')`;
+
+  db.query(selfMissionsql, (err, result) => {
+    if (err) {
+      console.error('Error updating missionusermap:', err);
+    }
+  });
+
+  db.query(selfMissionCuDaysql, (err, result) => {
+    if (err) {
+      console.error('Error updating missionKeepTime:', err);
+    }
+  });
+
+  db.query(systemMissionsql, (err, result) => {
+    if (err) {
+      console.error('Error updating systemMissionsql:', err);
+    }
+  });
+
+  db.query(systemMissionCuDaysql, (err, result) => {
+    if (err) {
+      console.error('Error updating systemMissionCuDaysql:', err);
+    }
+  });
+});
+
+
+// Refresh weekly mission every week at midnight
+cron.schedule('0 0 * * 1', () => {
+  const selfMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE `missionMode` = 'Weekly' AND `isSystem` = false";
+  const selfMissionCuDaysql = `UPDATE \`missionusermap\` SET \`missionKeepTime\` = 0 WHERE \`missionMode\` = 'Weekly' AND \`isSystem\` = false AND DATE(\`missionLastDate\`) != DATE(DATE_SUB(NOW(), INTERVAL 1 Week))`;
+
+  const systemMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE missionusermap.isSystem = true AND missionID IN (SELECT missionID FROM `mission` WHERE missionMode = 'Weekly')";
+  const systemMissionCuDaysql = `UPDATE \`missionusermap\` SET \`missionKeepTime\` = 0 WHERE \`isSystem\` = true AND DATE(\`missionLastDate\`) != DATE(DATE_SUB(NOW(), INTERVAL 1 Week)) AND missionID IN (SELECT missionID FROM \`mission\` WHERE missionMode = 'Weekly')`;
+
+  db.query(selfMissionsql, (err, result) => {
+    if (err) {
+      console.error('Error updating missionusermap:', err);
+    }
+  });
+
+  db.query(selfMissionCuDaysql, (err, result) => {
+    if (err) {
+      console.error('Error updating missionKeepTime:', err);
+    }
+  });
+
+  db.query(systemMissionsql, (err, result) => {
+    if (err) {
+      console.error('Error updating systemMissionsql:', err);
+    }
+  });
+
+  db.query(systemMissionCuDaysql, (err, result) => {
+    if (err) {
+      console.error('Error updating systemMissionCuDaysql:', err);
+    }
+  });
+});
+
+// Refresh monthly mission at midnight
+cron.schedule('0 0 1 * *', () => {
+  const selfMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE `missionMode` = 'Monthly' AND `isSystem` = false";
+  const systemMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE missionusermap.isSystem = true AND missionID IN (SELECT missionID FROM `mission` WHERE missionMode = 'Monthly')";
+  
+  db.query(selfMissionsql, (err, result) => {
+    if (err) {
+      console.error('Error updating missionusermap:', err);
+    }
+  });
+
+  db.query(systemMissionsql, (err, result) => {
+    if (err) {
+      console.error('Error updating systemMissionsql:', err);
+    }
+  });
+});
+
 
 //login
 app.post('/login', (req, res) => {
@@ -657,6 +769,7 @@ app.get('/getSelfDefineMissionList', (req, res) => {
   });
 });
 
+
 app.post('/finishMission', (req, res) => {
   const { userID, missionID, missionName, missionDetail, missionMode, missionDifficulty, isSystem, isFinish, missionPhoto, missionLastDate, missionKeepTime } = req.body;
 
@@ -665,23 +778,25 @@ app.post('/finishMission', (req, res) => {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   const formatToday = `${year}-${month}-${day}`;
-
+  
   let updatedMissionKeepTime = missionKeepTime;
-
+  
   if (missionLastDate) {
     const lastDate = new Date(missionLastDate);
-    let timeDifferenceInMilliseconds = today.getTime() - lastDate.getTime();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+  
+    const isYesterday = lastDate.getFullYear() === yesterday.getFullYear() && lastDate.getMonth() === yesterday.getMonth() && lastDate.getDate() === yesterday.getDate();
+    const isSameWeek = areDatesInSameWeek(lastDate, today);
 
     if (missionMode === 'Daily') {
-      const twentyFourHoursInMilliseconds = 24 * 60 * 60 * 1000;
-      if (timeDifferenceInMilliseconds >= twentyFourHoursInMilliseconds) {
+      if (isYesterday) {
         updatedMissionKeepTime += 1;
       } else {
         updatedMissionKeepTime = 1;
       }
     } else if (missionMode === 'Weekly') {
-      const oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000;
-      if (timeDifferenceInMilliseconds >= oneWeekInMilliseconds) {
+      if (isSameWeek) {
         updatedMissionKeepTime += 1;
       } else {
         updatedMissionKeepTime = 1;
