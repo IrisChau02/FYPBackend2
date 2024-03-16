@@ -146,7 +146,7 @@ cron.schedule('0 0 * * 1', () => {
 cron.schedule('0 0 1 * *', () => {
   const selfMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE `missionMode` = 'Monthly' AND `isSystem` = false";
   const systemMissionsql = "UPDATE `missionusermap` SET `isFinish` = false, `missionPhoto` = null WHERE missionusermap.isSystem = true AND missionID IN (SELECT missionID FROM `mission` WHERE missionMode = 'Monthly')";
-  
+
   db.query(selfMissionsql, (err, result) => {
     if (err) {
       console.error('Error updating missionusermap:', err);
@@ -377,20 +377,20 @@ app.post('/createGuild', (req, res) => {
   const today = new Date();
   const age = today.getFullYear() - birthday.getFullYear();
 
-   // Check the age category and find the corresponding mission targets
-   let missionTarget;
-   if (age <= 14) {
-     missionTarget = 'Child';
-   } else if (age <= 64) {
-     missionTarget = 'Adult';
-   } else {
-     missionTarget = 'Elder';
-   }
+  // Check the age category and find the corresponding mission targets
+  let missionTarget;
+  if (age <= 14) {
+    missionTarget = 'Child';
+  } else if (age <= 64) {
+    missionTarget = 'Adult';
+  } else {
+    missionTarget = 'Elder';
+  }
 
-   // Query the 'mission' table for the corresponding mission IDs
-   const selectMissionSql = "SELECT `missionID` FROM `mission` WHERE `missionTarget` = ?";
-   const selectMissionValues = [missionTarget];
-   /********************************************/
+  // Query the 'mission' table for the corresponding mission IDs
+  const selectMissionSql = "SELECT `missionID` FROM `mission` WHERE `missionTarget` = ?";
+  const selectMissionValues = [missionTarget];
+  /********************************************/
 
   db.beginTransaction((err) => {
     if (err) {
@@ -422,7 +422,7 @@ app.post('/createGuild', (req, res) => {
             if (err) {
               db.rollback(() => res.json(err));
             }
-            
+
             db.commit((err) => {
               if (err) {
                 db.rollback(() => res.json(err));
@@ -599,6 +599,23 @@ app.get('/getGuildEventByName', (req, res) => {
 
 });
 
+app.post('/joinEvent', (req, res) => {
+  const { memberID, guildName, eventName, currentNumber } = req.body;
+
+  console.log(memberID, guildName, eventName)
+  const sql = "UPDATE `guildevent` SET `memberID` = ?, `currentNumber` = ? WHERE `guildName` = ? AND `eventName` = ?";
+
+  const values = [memberID, currentNumber, guildName, eventName];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
+});
+
 ///////////////////////////Guild Member List/////////////////////////////
 app.get('/getGuildMemberList', (req, res) => {
   const { guildName } = req.query;
@@ -689,36 +706,50 @@ app.get('/getUserFriendList', (req, res) => {
 
 app.get('/getFriendListWithDetail', (req, res) => {
   const { userID } = req.query;
-  
-  const sql = "SELECT * FROM friendshipmap JOIN user ON friendshipmap.requestUserID = user.userID WHERE acceptUserID = ? AND isAccept = ?";
-  
-  const values = [userID, true];
-  
-  db.query(sql, values, (err, data) => {
-  if (err) {
-  return res.json(err);
-  }
-  return res.json(data);
-  });
-  });
 
-  app.get('/getRequestFriendListWithDetail', (req, res) => {
-    const { userID } = req.query;
-    
-    const sql = "SELECT * FROM friendshipmap JOIN user ON friendshipmap.acceptUserID = user.userID WHERE requestUserID = ? AND isAccept = ?";
-    
-    const values = [userID, true];
-    
-    db.query(sql, values, (err, data) => {
+  const sql = "SELECT * FROM friendshipmap JOIN user ON friendshipmap.requestUserID = user.userID WHERE acceptUserID = ? AND isAccept = ?";
+
+  const values = [userID, true];
+
+  db.query(sql, values, (err, data) => {
     if (err) {
-    return res.json(err);
+      return res.json(err);
     }
     return res.json(data);
-    });
-    });
+  });
+});
+
+app.get('/getRequestFriendListWithDetail', (req, res) => {
+  const { userID } = req.query;
+
+  const sql = "SELECT * FROM friendshipmap JOIN user ON friendshipmap.acceptUserID = user.userID WHERE requestUserID = ? AND isAccept = ?";
+
+  const values = [userID, true];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
+
+//confirm 2 known user is friend or not
+app.get('/getUserIsFriendWithUser', (req, res) => {
+  const { user1ID, user2ID } = req.query;
+
+  const sql = "SELECT * FROM `friendshipmap` WHERE (`requestUserID` = ? AND `acceptUserID` = ? AND `isAccept` = true) OR (`requestUserID` = ? AND `acceptUserID` = ? AND `isAccept` = true)";
+
+  db.query(sql, [user1ID, user2ID, user2ID, user1ID], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
 
 
-    
+
 //create new mission
 app.post('/createMission', (req, res) => {
 
@@ -778,14 +809,14 @@ app.post('/finishMission', (req, res) => {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   const formatToday = `${year}-${month}-${day}`;
-  
+
   let updatedMissionKeepTime = missionKeepTime;
-  
+
   if (missionLastDate) {
     const lastDate = new Date(missionLastDate);
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-  
+
     const isYesterday = lastDate.getFullYear() === yesterday.getFullYear() && lastDate.getMonth() === yesterday.getMonth() && lastDate.getDate() === yesterday.getDate();
     const isSameWeek = areDatesInSameWeek(lastDate, today);
 
@@ -832,7 +863,7 @@ app.post('/finishMission', (req, res) => {
 
       let sql;
       let values;
-      
+
       if (isSystem === false) {
         //use mission name
         sql =
