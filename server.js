@@ -552,10 +552,26 @@ app.get('/getGuildDetailByName', (req, res) => {
 });
 
 
+app.post('/updateGuild', (req, res) => {
+  const { guildName, guildIntro, guildLogo, groupID } = req.body;
+  
+  const sql = "UPDATE `guild` SET `guildIntro` = ?, `guildLogo` = ?, `groupID` = ? WHERE `guildName` = ?";
+  const values = [guildIntro, guildLogo, groupID, guildName];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
+});
+
+
 ///////////////////////////Guild Event/////////////////////////////
 app.post('/createGuildEvent', (req, res) => {
-  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`) VALUES (?)";
-  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.userID];
+  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`, `isFinished`) VALUES (?)";
+  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.userID, false];
 
   const mapsql = "INSERT INTO `eventusermap`(`eventName`, `guildName`, `userID`) VALUES (?)";
   const mapvalues = [req.body.eventName, req.body.guildName, req.body.userID];
@@ -579,9 +595,9 @@ app.post('/createGuildEvent', (req, res) => {
 
 app.get('/getGuildEvent', (req, res) => {
   const { guildName } = req.query;
-  const sql = "SELECT * FROM `guildevent` WHERE `guildName` = ?"
+  const sql = "SELECT * FROM `guildevent` WHERE `guildName` = ? AND `isFinished` = ?"
 
-  db.query(sql, [guildName], (err, data) => {
+  db.query(sql, [guildName, false], (err, data) => {
     if (err) {
       return res.json(err);
     }
@@ -643,6 +659,21 @@ app.get('/getGuildEventMember', (req, res) => {
     return res.json(data);
   });
 
+});
+
+app.post('/finishGuildEvent', (req, res) => {
+  const { eventName, guildName, eventPhoto } = req.body;
+
+  const sql = "UPDATE `guildevent` SET `isFinished` = ?, `eventPhoto` = ? WHERE `eventName` = ? AND `guildName` = ?";
+  const values = [true, eventPhoto, eventName, guildName];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
 });
 
 ///////////////////////////Guild Member List/////////////////////////////
