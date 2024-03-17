@@ -554,22 +554,28 @@ app.get('/getGuildDetailByName', (req, res) => {
 
 ///////////////////////////Guild Event/////////////////////////////
 app.post('/createGuildEvent', (req, res) => {
+  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`) VALUES (?)";
+  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.userID];
 
-  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`, `memberID`) VALUES (?)"
+  const mapsql = "INSERT INTO `eventusermap`(`eventName`, `guildName`, `userID`) VALUES (?)";
+  const mapvalues = [req.body.eventName, req.body.guildName, req.body.userID];
 
-  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.userID, null]
-
-  db.query(sql, [values], (err, data) => {
-    if (err) {
-      console.log(err)
-      return res.json(err);
+  db.query(sql, [values], (eventErr, eventData) => {
+    if (eventErr) {
+      console.log(eventErr);
+      return res.json(eventErr);
     }
-    return res.json("added");
 
-  })
+    db.query(mapsql, [mapvalues], (mapErr, mapData) => {
+      if (mapErr) {
+        console.log(mapErr);
+        return res.json(mapErr);
+      }
 
+      return res.json("added");
+    });
+  });
 });
-
 
 app.get('/getGuildEvent', (req, res) => {
   const { guildName } = req.query;
@@ -600,20 +606,43 @@ app.get('/getGuildEventByName', (req, res) => {
 });
 
 app.post('/joinEvent', (req, res) => {
-  const { memberID, guildName, eventName, currentNumber } = req.body;
+  const { userID, guildName, eventName, currentNumber } = req.body;
 
-  console.log(memberID, guildName, eventName)
-  const sql = "UPDATE `guildevent` SET `memberID` = ?, `currentNumber` = ? WHERE `guildName` = ? AND `eventName` = ?";
+  // Set currentNumber = currentNumber + 1
+  const eventsql = "UPDATE `guildevent` SET `currentNumber` = ? WHERE `guildName` = ? AND `eventName` = ?";
+  const eventvalues = [currentNumber, guildName, eventName];
 
-  const values = [memberID, currentNumber, guildName, eventName];
+  const mapsql = "INSERT INTO `eventusermap`(`eventName`, `guildName`, `userID`) VALUES (?)";
+  const mapvalues = [eventName, guildName, userID];
 
-  db.query(sql, values, (err, data) => {
+  db.query(eventsql, eventvalues, (eventErr, eventData) => {
+    if (eventErr) {
+      console.log(eventErr);
+      return res.json(eventErr);
+    }
+
+    db.query(mapsql, [mapvalues], (mapErr, mapData) => {
+      if (mapErr) {
+        console.log(mapErr);
+        return res.json(mapErr);
+      }
+
+      return res.json("updated");
+    });
+  });
+});
+
+app.get('/getGuildEventMember', (req, res) => {
+  const { eventName, guildName } = req.query;
+  const sql = "SELECT * FROM `eventusermap` WHERE `eventName` = ? AND `guildName` = ?"
+
+  db.query(sql, [eventName, guildName], (err, data) => {
     if (err) {
-      console.log(err);
       return res.json(err);
     }
-    return res.json("updated");
+    return res.json(data);
   });
+
 });
 
 ///////////////////////////Guild Member List/////////////////////////////
