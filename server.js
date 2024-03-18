@@ -959,8 +959,17 @@ app.post('/finishMission', (req, res) => {
   });
 });
 
+//Guild Ranking
+app.get('/getAllGuildRanking', (req, res) => {
+  const sql = "SELECT guild.*, SUM(user.checkPoint) AS totalCheckPoint FROM `user` JOIN `guild` ON user.guildName = guild.guildName GROUP BY guild.guildName ORDER BY totalCheckPoint DESC";
 
-
+  db.query(sql, (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
 
 
 /*
