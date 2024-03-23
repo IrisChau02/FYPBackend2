@@ -828,7 +828,19 @@ app.post('/createMission', (req, res) => {
 
 });
 
+//check no. of self defined mission
+app.get('/getMissionNumByMode', (req, res) => {
+  const { userID, missionMode } = req.query;
 
+  const sql = "SELECT count(*) FROM `missionusermap` WHERE `isSystem` = false AND `userID` = ? AND `missionMode` = ?";
+
+  db.query(sql, [userID, missionMode], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
 
 app.get('/getSystemMissionList', (req, res) => {
   const { userID } = req.query;
@@ -862,7 +874,7 @@ app.get('/getSelfDefineMissionList', (req, res) => {
 
 
 app.post('/finishMission', (req, res) => {
-  const { userID, missionID, missionName, missionDetail, missionMode, missionDifficulty, isSystem, isFinish, missionPhoto, missionLastDate, missionKeepTime } = req.body;
+  const { userID, missionID, missionName, missionMode, missionDifficulty, isSystem, isFinish, missionPhoto, missionLastDate, missionKeepTime } = req.body;
 
   const today = new Date();
   const year = today.getFullYear();
@@ -912,19 +924,19 @@ app.post('/finishMission', (req, res) => {
       const originalCheckPoint = cpData[0].checkPoint;
 
       if (missionDifficulty === 'Easy') {
-        updatedCheckPoint = originalCheckPoint + 1;
+        updatedCheckPoint = originalCheckPoint + updatedMissionKeepTime * 1; //cumulative
       } else if (missionDifficulty === 'Normal') {
-        updatedCheckPoint = originalCheckPoint + 2;
+        updatedCheckPoint = originalCheckPoint + updatedMissionKeepTime * 2;
       } else if (missionDifficulty === 'Medium') {
-        updatedCheckPoint = originalCheckPoint + 3;
+        updatedCheckPoint = originalCheckPoint + updatedMissionKeepTime * 3;
       } else if (missionDifficulty === 'Hard') {
-        updatedCheckPoint = originalCheckPoint + 4;
+        updatedCheckPoint = originalCheckPoint + updatedMissionKeepTime * 4;
       }
 
       let sql;
       let values;
 
-      if (isSystem === false) {
+      if (isSystem === 0) {
         //use mission name
         sql =
           "UPDATE `missionusermap` SET `isFinish` = ?, `missionPhoto` = ?, `missionLastDate` = ?, `missionKeepTime` = ? WHERE `userID` = ? AND `missionName` = ?";
@@ -961,7 +973,7 @@ app.post('/finishMission', (req, res) => {
 
 //Guild Ranking
 app.get('/getAllGuildRanking', (req, res) => {
-  const sql = "SELECT guild.*, SUM(user.checkPoint) AS totalCheckPoint FROM `user` JOIN `guild` ON user.guildName = guild.guildName GROUP BY guild.guildName ORDER BY totalCheckPoint DESC";
+  const sql = "SELECT guild.*, district.*, SUM(user.checkPoint) AS totalCheckPoint FROM `user` JOIN `guild` ON user.guildName = guild.guildName JOIN `district` ON guild.districtID = district.districtID GROUP BY guild.guildName ORDER BY totalCheckPoint DESC";
 
   db.query(sql, (err, data) => {
     if (err) {
