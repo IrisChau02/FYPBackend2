@@ -984,6 +984,38 @@ app.get('/getAllGuildRanking', (req, res) => {
 });
 
 
+//get guild checkPoint
+app.get('/getGuildCheckPoint', (req, res) => {
+  const { guildName } = req.query;
+
+  const sql = "SELECT SUM(`checkPoint`) AS totalCheckPoint FROM `user` WHERE `guildName` = ?";
+
+  db.query(sql, [guildName], (err, data) => {
+    if (err) {
+      return res.json(err);
+    }
+    return res.json(data);
+  });
+});
+
+//upgrade guild
+app.post('/upgradeGuild', (req, res) => {
+
+  const { guildName, level, maxMemberLimit } = req.body;
+
+  const sql = "UPDATE `guild` SET `level` = ? , `maxMemberLimit` = ? WHERE `guildName` = ?";
+  const values = [level + 1, maxMemberLimit + 20, guildName];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
+
+});
+
 /*
 app.get('/users', (req, res)=> {
   const sql = "SELECT * FROM users"
