@@ -463,8 +463,6 @@ app.post('/joinGuild', (req, res) => {
     missionTarget = 'Elder';
   }
 
-  console.log(missionTarget)
-
   // Query the 'mission' table for the corresponding mission IDs
   const selectMissionSql = "SELECT `missionID` FROM `mission` WHERE `missionTarget` = ?";
   const selectMissionValues = [missionTarget];
@@ -513,6 +511,49 @@ app.post('/joinGuild', (req, res) => {
   });
 });
 
+app.post('/leaveGuild', (req, res) => {
+  const { userID, guildName } = req.body;
+
+  const guildSql = "UPDATE guild SET memberNo = memberNo - 1 WHERE guildName = ?";
+  const guildValues = [guildName];
+
+  const userSql = "UPDATE user SET guildName = null, checkPoint = 0 WHERE userID = ?";
+  const userValues = [userID];
+
+  const missionUserMapSql = "DELETE FROM missionusermap WHERE userID = ?";
+  const missionUserMapValues = [userID];
+
+  db.beginTransaction((err) => {
+    if (err) {
+      return res.json(err);
+    }
+
+    db.query(guildSql, guildValues, (err, guildData) => {
+      if (err) {
+        db.rollback(() => res.json(err));
+      }
+
+      db.query(userSql, userValues, (err, userData) => {
+        if (err) {
+          db.rollback(() => res.json(err));
+        }
+
+        db.query(missionUserMapSql, missionUserMapValues, (err, missionUserMapData) => {
+          if (err) {
+            db.rollback(() => res.json(err));
+          }
+
+          db.commit((err) => {
+            if (err) {
+              db.rollback(() => res.json(err));
+            }
+            return res.json("updated");
+          });
+        });
+      });
+    });
+  });
+});
 
 app.get('/getGuild', (req, res) => {
   const sql = "SELECT * FROM `guild`"
@@ -648,10 +689,38 @@ app.post('/joinEvent', (req, res) => {
   });
 });
 
+app.post('/leaveEvent', (req, res) => {
+  const { userID, guildName, eventName } = req.body;
+
+  // Decrease currentNumber by 1
+  const eventsql = "UPDATE `guildevent` SET `currentNumber` = `currentNumber` - 1 WHERE `guildName` = ? AND `eventName` = ?";
+  const eventvalues = [guildName, eventName];
+
+  const mapsql = "DELETE FROM `eventusermap` WHERE `eventName` = ? AND `guildName` = ? AND `userID` = ?";
+  const mapvalues = [eventName, guildName, userID];
+
+  db.query(eventsql, eventvalues, (eventErr, eventData) => {
+    if (eventErr) {
+      console.log(eventErr);
+      return res.json(eventErr);
+    }
+
+    db.query(mapsql, mapvalues, (mapErr, mapData) => {
+      if (mapErr) {
+        console.log(mapErr);
+        return res.json(mapErr);
+      }
+
+      return res.json("updated");
+    });
+  });
+});
+
 app.get('/getGuildEventMember', (req, res) => {
   const { eventName, guildName } = req.query;
-  const sql = "SELECT * FROM `eventusermap` WHERE `eventName` = ? AND `guildName` = ?"
 
+  const sql = "SELECT `eventusermap`.*, `user`.`loginName` FROM `eventusermap` INNER JOIN `user` ON `eventusermap`.`userID` = `user`.`userID` WHERE `eventusermap`.`eventName` = ? AND `eventusermap`.`guildName` = ?";
+  
   db.query(sql, [eventName, guildName], (err, data) => {
     if (err) {
       return res.json(err);
