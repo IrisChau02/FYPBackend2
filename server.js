@@ -611,8 +611,8 @@ app.post('/updateGuild', (req, res) => {
 
 ///////////////////////////Guild Event/////////////////////////////
 app.post('/createGuildEvent', (req, res) => {
-  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `initiatorID`, `isFinished`) VALUES (?)";
-  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.startTime, req.body.endTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.userID, false];
+  const sql = "INSERT INTO `guildevent`(`eventName`, `guildName`, `eventDetail`, `eventDate`, `startTime`, `endTime`, `memberNumber`, `currentNumber`, `venue`, `latitude`, `longitude`, `initiatorID`, `isFinished`) VALUES (?)";
+  const values = [req.body.eventName, req.body.guildName, req.body.eventDetail, req.body.formateventDate, req.body.formatstartTime, req.body.formatendTime, req.body.memberNumber, req.body.currentNumber, req.body.venue, req.body.latitude, req.body.longitude, req.body.userID, false];
 
   const mapsql = "INSERT INTO `eventusermap`(`eventName`, `guildName`, `userID`) VALUES (?)";
   const mapvalues = [req.body.eventName, req.body.guildName, req.body.userID];
@@ -636,7 +636,7 @@ app.post('/createGuildEvent', (req, res) => {
 
 app.get('/getGuildEvent', (req, res) => {
   const { guildName } = req.query;
-  const sql = "SELECT * FROM `guildevent` WHERE `guildName` = ? AND `isFinished` = ?"
+  const sql = "SELECT guildevent.*, user.loginName FROM guildevent JOIN user ON guildevent.initiatorID = user.userID WHERE guildevent.guildName = ? AND guildevent.isFinished = ?";
 
   db.query(sql, [guildName, false], (err, data) => {
     if (err) {
@@ -644,7 +644,6 @@ app.get('/getGuildEvent', (req, res) => {
     }
     return res.json(data);
   });
-
 });
 
 
@@ -895,6 +894,40 @@ app.post('/createMission', (req, res) => {
 
   })
 
+});
+
+//update self-defined mission (except one time)
+app.post('/updateMission', (req, res) => {
+  const { userID, missionName, missionNewName, missionDetail, missionDifficulty, isFinish } = req.body;
+
+  console.log(userID, missionName, missionNewName, missionDetail, missionDifficulty, isFinish)
+
+  const sql = "UPDATE `missionusermap` SET `missionName` = ?, `missionDetail` = ? , `missionDifficulty` = ? ,`isFinish` = ? ,`missionPhoto` = ?, `missionLastDate` = ?, `missionKeepTime` = ? WHERE `userID` = ? AND `missionName` = ?";
+  const values = [missionNewName, missionDetail, missionDifficulty, isFinish, null, null, 0, userID, missionName];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
+});
+
+//delete self-defined mission (only one time)
+app.post('/deleteMission', (req, res) => {
+  const { userID, missionName } = req.body;
+
+  const sql = "DELETE FROM `missionusermap` WHERE `missionName` = ? AND `userID` = ?";
+  const values = [missionName, userID];
+
+  db.query(sql, values, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.json(err);
+    }
+    return res.json("updated");
+  });
 });
 
 //check no. of self defined mission
