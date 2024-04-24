@@ -900,8 +900,6 @@ app.post('/createMission', (req, res) => {
 app.post('/updateMission', (req, res) => {
   const { userID, missionName, missionNewName, missionDetail, missionDifficulty, isFinish } = req.body;
 
-  console.log(userID, missionName, missionNewName, missionDetail, missionDifficulty, isFinish)
-
   const sql = "UPDATE `missionusermap` SET `missionName` = ?, `missionDetail` = ? , `missionDifficulty` = ? ,`isFinish` = ? ,`missionPhoto` = ?, `missionLastDate` = ?, `missionKeepTime` = ? WHERE `userID` = ? AND `missionName` = ?";
   const values = [missionNewName, missionDetail, missionDifficulty, isFinish, null, null, 0, userID, missionName];
 
